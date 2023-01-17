@@ -10,10 +10,10 @@ on:
         description: 'OTA2'
         required: true
       release_version1:
-        description: 'Release version'
+        description: 'Release version (OTA1)'
         required: true
       release_version2:
-        description: 'Release version'
+        description: 'Release version (OTA2)'
         required: true
 
 jobs:
