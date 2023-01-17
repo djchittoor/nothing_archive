@@ -9,6 +9,12 @@ on:
       ota2:
         description: 'OTA2'
         required: true
+      release_version1:
+        description: 'Release version'
+        required: true
+      release_version2:
+        description: 'Release version'
+        required: true
 
 jobs:
   dump:
@@ -31,9 +37,7 @@ jobs:
       id: download
       run: |
         aria2c -q -s16 -x16 ${{ inputs.ota1 }} -o ota1.zip
-        echo ::set-output name=ota1_ver::`unzip -p ota1.zip META-INF/com/android/metadata | grep ^version_name= | cut -b 14-`
         aria2c -q -s16 -x16 ${{ inputs.ota2 }} -o ota2.zip
-        echo ::set-output name=ota2_ver::`unzip -p ota2.zip META-INF/com/android/metadata | grep ^version_name= | cut -b 14-`
 
     - name: Dump
       run: |
@@ -50,6 +54,6 @@ jobs:
       with:
         body: |
           ~ Incremental OTA ~
-          [${{ steps.download.outputs.ota1_ver }}](${{ inputs.ota1 }}) (full) -> [${{ steps.download.outputs.ota2_ver }}](${{ inputs.ota2 }})
-        tag_name: ${{ steps.download.outputs.ota2_ver }}
+          [${{ inputs.release_version1 }}](${{ inputs.ota1 }}) (full) -> [${{ inputs.release_version2 }}](${{ inputs.ota2 }})
+        tag_name: ${{ inputs.release_version2 }}
         files: ota2/*.img.zst
