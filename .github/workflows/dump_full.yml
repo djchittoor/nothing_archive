@@ -6,6 +6,9 @@ on:
       ota:
         description: 'OTA'
         required: true
+      release_version:
+        description: 'Release version'
+        required: true
 
 jobs:
   dump:
@@ -25,7 +28,6 @@ jobs:
       id: download
       run: |
         aria2c -q -s16 -x16 ${{ inputs.ota }} -o ota.zip
-        echo ::set-output name=ota_ver::`unzip -p ota.zip META-INF/com/android/metadata | grep ^version_name= | cut -b 14-`
 
     - name: Dump
       run: |
@@ -38,5 +40,5 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         body: ${{ inputs.ota }}
-        tag_name: ${{ steps.download.outputs.ota_ver }}
+        tag_name: ${{ inputs.release_version }}
         files: ota/*.img.zst
