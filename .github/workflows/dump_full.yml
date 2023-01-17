@@ -18,13 +18,13 @@ jobs:
     - name: Setup
       run: |
         sudo apt update
-        sudo apt -y install zstd
+        sudo apt -y install aria2 zstd
         curl -L https://github.com/ssut/payload-dumper-go/releases/download/1.2.2/payload-dumper-go_1.2.2_linux_amd64.tar.gz -o - | tar zxf - payload-dumper-go
 
     - name: Download
       id: download
       run: |
-        curl ${{ inputs.ota }} -o ota.zip
+        aria2c -q -s16 -x16 ${{ inputs.ota }} -o ota.zip
         echo ::set-output name=ota_ver::`unzip -p ota.zip META-INF/com/android/metadata | grep ^version_name= | cut -b 14-`
 
     - name: Dump
