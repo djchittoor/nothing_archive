@@ -3,17 +3,14 @@ name: Dump firmware (incremental)
 on:
   workflow_dispatch:
     inputs:
-      ota1:
-        description: 'OTA1'
-        required: true
       ota2:
-        description: 'OTA2'
+        description: 'OTA'
         required: true
       release_version1:
-        description: 'Release version (OTA1)'
+        description: 'Release version (base)'
         required: true
       release_version2:
-        description: 'Release version (OTA2)'
+        description: 'Release version (incremental)'
         required: true
 
 jobs:
@@ -28,7 +25,6 @@ jobs:
       run: |
         sudo apt update
         sudo apt -y install aria2 protobuf-compiler python3 python3-protobuf zstd
-        curl -L https://github.com/ssut/payload-dumper-go/releases/download/1.2.2/payload-dumper-go_1.2.2_linux_amd64.tar.gz -o - | tar zxf - payload-dumper-go
         git clone https://github.com/CaptainThrowback/update_payload_extractor
         curl https://raw.githubusercontent.com/LineageOS/android_system_update_engine/lineage-20.0/update_metadata.proto -o update_metadata.proto
         protoc update_metadata.proto --python_out update_payload_extractor/update_payload
@@ -36,13 +32,15 @@ jobs:
     - name: Download
       id: download
       run: |
-        aria2c -q -s16 -x16 ${{ inputs.ota1 }} -o ota1.zip
         aria2c -q -s16 -x16 ${{ inputs.ota2 }} -o ota2.zip
 
     - name: Dump
       run: |
-        ./payload-dumper-go -o ota1 ota1.zip > /dev/null
-        pushd ota1; for i in ./*.img; do mv -i "$i" "${i%.img}"; done; popd
+        mkdir ota1; pushd ota1; curl -s https://api.github.com/repos/djchittoor/nothing_archive/releases/tags/${{ inputs.release_version1}} \
+          | grep "browser_download_url" \
+          | cut -d : -f 2,3 \
+          | tr -d \" \
+          | wget -qi - ; for f in *; do unzstd --rm $f; done; popd
         unzip ota2.zip payload.bin
         pushd update_payload_extractor; ./extract.py --skip_hash --output_dir ../ota2 --old_dir ../ota1 ../payload.bin; popd
         pushd ota2; for f in *; do zstd $f; done; popd
@@ -54,6 +52,6 @@ jobs:
       with:
         body: |
           ~ Incremental OTA ~
-          [${{ inputs.release_version1 }}](${{ inputs.ota1 }}) (full) -> [${{ inputs.release_version2 }}](${{ inputs.ota2 }})
+          [${{ inputs.release_version1 }}]( https://github.com/djchittoor/nothing_archive/releases/tag/${{ inputs.release_version1 }}) (incremental) -> [${{ inputs.release_version2 }}](${{ inputs.ota2 }})
         tag_name: ${{ inputs.release_version2 }}
         files: ota2/*.img.zst
